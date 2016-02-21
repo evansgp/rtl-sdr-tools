@@ -3,6 +3,15 @@
 import argparse
 import sys
 import rtl_sdr.rtl_power
+from statistics import mean, variance
+
+def main():
+    parser = rtl_sdr.rtl_power.Parser(args.input_file)
+    parser.process()
+    spectrum = parser.readings.spectrum
+    freqs = analyse(spectrum)
+    interesting = sorted(freqs.items(), key=lambda x: x[1], reverse=True)
+    print(interesting)
 
 def parse_cli():
     parser = argparse.ArgumentParser(description='Find "active" frequencies in an rtl_power CSV.')
@@ -12,16 +21,26 @@ def parse_cli():
         help='Verbose output.')
     args = parser.parse_args()
     if args.verbose:
-        print(vars(args))
+        print('configuration: {!r}'.format(vars(args)))
     return args
+
+def analyse(spectrum):
+    # TODO pythonify
+    freqs_powers = {}
+    freqs = {}
+    for (time, bins) in spectrum:
+        for (freq, powers) in bins:
+            freqs_powers.setdefault(freq, []).append(powers)
+
+    for (freq, powers) in freqs_powers.items():
+        f_mean = mean(powers)
+        f_var = variance(powers, f_mean)
+        f_hits = len([p for p in powers if p > f_mean + 2*f_var])
+        if f_hits:
+            freqs[freq] = f_hits
+
+    return freqs;
 
 
 args = parse_cli()
-parser = rtl_sdr.rtl_power.Parser(args.input_file)
-parser.process()
-readings = parser.readings
-
-first_t = readings.spectrum[0]
-
-print('ts = {}, first = {}, last = {}, bins = {}'.format(first_t[0], first_t[1][0], first_t[1][-1], len(first_t[1])))
-#print(first_t)
+main()
