@@ -18,10 +18,10 @@ def parse_cli():
 
 args = parse_cli()
 parser = rtl_sdr.rtl_power.Parser(args.input_file)
-readings = parser.readings()
-print('hz_low ', str(readings.hz_low))
-print('hz_high ', str(readings.hz_high))
-print('hz_step ', str(readings.hz_step))
-print('n_steps  ', str(readings.n_steps))
-print(readings.data[0])
-print(len(readings.data[0]))
+parser.process()
+readings = parser.readings
+
+first_t = readings.spectrum[0]
+
+print('ts = {}, first = {}, last = {}, bins = {}'.format(first_t[0], first_t[1][0], first_t[1][-1], len(first_t[1])))
+#print(first_t)
